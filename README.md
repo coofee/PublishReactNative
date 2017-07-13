@@ -18,8 +18,35 @@ allprojects {
 
 ## 0x01 一键发布react-native的aar.
 
+* 安装android sdk + ndk环境
+
+ndk: android-ndk-r10e
+
+
+* 下载脚本代码:
+
 ```bash
 git clone https://github.com/coofee/PublishReactNative
+```
+
+* 修改基本配置
+
+```groovy
+ext {
+    MAVEN_USERNAME = ''
+    MAVEN_PASSWORD = ''
+    // maven url
+    URL = ''
+    // move libs.so from armeabi-v7a to armeabi
+    moveToArmeabi = true;
+    // true: if you want publish add without pom dependencies,  default is false.
+    removeDependencies = false;
+}
+```
+
+* 发布react-native的aar.
+
+```bash
 # 如：./publish.sh 0.44
 ./publish.sh version 
 ```

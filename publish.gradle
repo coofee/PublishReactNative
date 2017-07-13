@@ -26,7 +26,9 @@ ext {
     MAVEN_PASSWORD = ''
     // maven url
     URL = ''
-    // true: if you want publish add without pom dependencies.
+    // move libs.so from armeabi-v7a to armeabi
+    moveToArmeabi = true;
+    // true: if you want publish add without pom dependencies,  default is false.
     removeDependencies = false;
 }
 
@@ -84,13 +86,18 @@ afterEvaluate {
 
             originZip.entries().each { entry ->
                 String name = entry.name;
-                int soNameStartIndex = name.indexOf('jni/armeabi-v7a/');
-                if (soNameStartIndex == 0) {
-                    if (name.equals('jni/armeabi-v7a/')) {
-                        return;
-                    }
 
-                    name = name.replaceFirst('jni/armeabi-v7a/', 'jni/armeabi/');
+                if (moveToArmeabi) {
+                    int soNameStartIndex = name.indexOf('jni/armeabi-v7a/');
+                    if (soNameStartIndex == 0) {
+                        if (name.equals('jni/armeabi-v7a/')) {
+                            // ignore 'jni/armeabi-v7a/' directory.
+                            return;
+                        }
+
+                        name = name.replaceFirst('jni/armeabi-v7a/', 'jni/armeabi/');
+                        println "move ${entry.name} to ${name}."
+                    }
                 }
 
                 zipEntry = new ZipEntry(name);
