@@ -28,7 +28,7 @@ ext {
     URL = ''
     // move libs.so from armeabi-v7a to armeabi
     moveToArmeabi = true;
-    // true: if you want publish add without pom dependencies,  default is false.
+    // true: if you want publish aar without pom dependencies,  default is false.
     removeDependencies = false;
 }
 

@@ -39,7 +39,7 @@ ext {
     URL = ''
     // move libs.so from armeabi-v7a to armeabi
     moveToArmeabi = true;
-    // true: if you want publish add without pom dependencies,  default is false.
+    // true: if you want publish aar without pom dependencies,  default is false.
     removeDependencies = false;
 }
 ```
@@ -47,6 +47,6 @@ ext {
 * 发布react-native的aar.
 
 ```bash
-# 如：./publish.sh 0.44
+# 如：./publish.sh 0.44
 ./publish.sh version 
 ```
