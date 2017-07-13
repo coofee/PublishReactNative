@@ -24,7 +24,10 @@ artifacts {
 ext {
     MAVEN_USERNAME = ''
     MAVEN_PASSWORD = ''
+    // maven url
     URL = ''
+    // true: if you want publish add without pom dependencies.
+    removeDependencies = false;
 }
 
 println "MAVEN_USERNAME=${MAVEN_USERNAME}, MAVEN_PASSWORD=${MAVEN_PASSWORD}, " +
@@ -45,7 +48,11 @@ task publish(type: Upload, group: 'utils', description: 'publish aar to maven.')
             pom.artifactId = POM_ARTIFACT_ID
             pom.version = VERSION_NAME
 
-            pom*.whenConfigured { pom -> pom.dependencies.clear() }
+            pom*.whenConfigured {
+                if (removeDependencies) { 
+                    pom -> pom.dependencies.clear()
+                } 
+            }
         }
     }
 }
