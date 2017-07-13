@@ -1,0 +1,110 @@
+import org.codehaus.groovy.runtime.IOGroovyMethods
+
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+
+apply plugin: 'maven'
+
+configurations {
+    packageAAR
+}
+
+task aarSourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+    include '**/*.java'
+}
+
+artifacts {
+    packageAAR file("${project.buildDir}/outputs/aar/${project.name}.aar");
+    packageAAR aarSourcesJar
+}
+
+ext {
+    MAVEN_USERNAME = ''
+    MAVEN_PASSWORD = ''
+    URL = ''
+}
+
+println "MAVEN_USERNAME=${MAVEN_USERNAME}, MAVEN_PASSWORD=${MAVEN_PASSWORD}, " +
+    "pom.groupId=${GROUP}, pom.artifactId=${POM_ARTIFACT_ID}, version=${VERSION_NAME}"
+
+
+task publish(type: Upload, group: 'utils', description: 'publish aar to maven.') {
+    configuration = configurations.packageAAR
+    repositories {
+        mavenDeployer {
+            repository(url: "${URL}") {
+                authentication(userName: MAVEN_USERNAME, password: MAVEN_PASSWORD)
+            }
+            snapshotRepository(url: "${URL}") {
+                authentication(userName: MAVEN_USERNAME, password: MAVEN_PASSWORD)
+            }
+            pom.groupId = GROUP
+            pom.artifactId = POM_ARTIFACT_ID
+            pom.version = VERSION_NAME
+
+            pom*.whenConfigured { pom -> pom.dependencies.clear() }
+        }
+    }
+}
+
+afterEvaluate {
+    Task assembleTask = project.getTasksByName('assembleRelease', false).first();
+    assembleTask.outputs.upToDateWhen { false; }
+
+    println "assembleTask=${assembleTask}"
+    assembleTask.doLast {
+        println 'try generate aar...'
+
+        File origin = new File("${project.buildDir}/outputs/aar/${project.name}-release.aar");
+        if (!origin.exists()) {
+            throw new RuntimeException("${origin} does not exists.");
+        }
+
+        File target = new File(origin.parentFile, "${project.name}.aar");
+        if (target.exists()) {
+            target.delete();
+        }
+
+        ZipFile originZip = null;
+        ZipOutputStream targetZip = null;
+        try {
+            originZip = new ZipFile(origin);
+            targetZip = new ZipOutputStream(new FileOutputStream(target));
+            ZipEntry zipEntry = null;
+
+            originZip.entries().each { entry ->
+                String name = entry.name;
+                int soNameStartIndex = name.indexOf('jni/armeabi-v7a/');
+                if (soNameStartIndex == 0) {
+                    if (name.equals('jni/armeabi-v7a/')) {
+                        return;
+                    }
+
+                    name = name.replaceFirst('jni/armeabi-v7a/', 'jni/armeabi/');
+                }
+
+                zipEntry = new ZipEntry(name);
+                targetZip.putNextEntry(zipEntry);
+                targetZip << originZip.getInputStream(entry).bytes;
+                targetZip.closeEntry()
+            }
+        } catch (Throwable e) {
+            throw e;
+        } finally {
+            IOGroovyMethods.closeWithWarning(originZip);
+            IOGroovyMethods.closeWithWarning(targetZip);
+        }
+        println "${target} generate aar done. "
+    }
+
+    Task publishTask = project.getTasksByName('publish', false).first();
+    println "publishTask=${publishTask}"
+    publishTask.outputs.upToDateWhen { false }
+
+    publishTask.dependsOn assembleTask;
+    publishTask.shouldRunAfter assembleTask;
+    publishTask.mustRunAfter assembleTask;
+}
